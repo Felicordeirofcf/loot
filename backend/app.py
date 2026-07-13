@@ -11,45 +11,21 @@ app = Flask(__name__)
 CORS(app)
 
 def get_db_connection():
-    # Pega a URL que você cadastrou lá na Vercel
     db_url = os.environ.get('DATABASE_URL')
-    
     if not db_url:
         raise ValueError("A DATABASE_URL não foi encontrada nas variáveis de ambiente!")
     
-    # O Supabase exige SSL quando acessado pela nuvem (Vercel)
+    # Adiciona o sslmode obrigatório para conexão segura
     if "?" not in db_url:
         db_url += "?sslmode=require"
     elif "sslmode" not in db_url:
         db_url += "&sslmode=require"
         
-    conn = psycopg2.connect(db_url)
-    return conn
-
-def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS hunts (
-            id SERIAL PRIMARY KEY,
-            session_date TEXT,
-            session_time TEXT,
-            balance INTEGER,
-            tc_price INTEGER,
-            tc_farmed REAL,
-            brl_value REAL
-        )
-    ''')
-    conn.commit()
-    cursor.close()
-    conn.close()
+    return psycopg2.connect(db_url)
 
 @app.route('/api/hunts', methods=['GET', 'POST'])
 def handle_hunts():
     try:
-        # Garante que a tabela existe ANTES de qualquer requisição
-        init_db()
-        
         if request.method == 'POST':
             data = request.json
             raw_log = data.get('log', '')
@@ -77,7 +53,7 @@ def handle_hunts():
             cursor.close()
             conn.close()
                 
-            return jsonify({"status": "success", "message": "Hunt registrada!"}), 201
+            return jsonify({"status": "success", "message": "Hunt registrada com sucesso!"}), 201
             
         elif request.method == 'GET':
             conn = get_db_connection()
@@ -87,16 +63,13 @@ def handle_hunts():
             cursor.close()
             conn.close()
             
-            # Converte os resultados pra dicionário puro pro Flask não bugar
             return jsonify([dict(row) for row in rows])
 
     except Exception as e:
-        # Se quebrar, joga o erro na tela para sabermos exatamente o que foi!
-        error_msg = traceback.format_exc()
         return jsonify({
             "status": "error", 
             "message": str(e),
-            "detalhes": error_msg
+            "detalhes": traceback.format_exc()
         }), 500
 
 @app.route('/api/hunts/<int:hunt_id>', methods=['DELETE'])
