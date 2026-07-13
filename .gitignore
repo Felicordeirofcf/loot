@@ -1,0 +1,13 @@
+# Frontend
+tibia-farm-tracker/frontend/node_modules/
+tibia-farm-tracker/frontend/dist/
+tibia-farm-tracker/frontend/.env
+
+# Backend
+tibia-farm-tracker/backend/__pycache__/
+tibia-farm-tracker/backend/*.pyc
+tibia-farm-tracker/backend/hunts.db
+
+# Outros
+.DS_Store
+.vscode/
