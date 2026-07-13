@@ -8,7 +8,8 @@ function App() {
 
   const fetchHunts = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/hunts');
+      // Usando URL relativa para funcionar na Vercel
+      const res = await axios.get('/api/hunts');
       setHunts(res.data);
     } catch (error) {
       console.error("Erro ao buscar hunts:", error);
@@ -22,7 +23,8 @@ function App() {
     if (!rawLog.trim()) return;
 
     try {
-      await axios.post('http://localhost:5000/api/hunts', {
+      // Usando URL relativa para funcionar na Vercel
+      await axios.post('/api/hunts', {
         log: rawLog, tc_price: tcPrice
       });
       setRawLog('');
@@ -35,7 +37,8 @@ function App() {
   const handleDelete = async (id) => {
     if (window.confirm("Tem certeza que deseja excluir esta hunt? Os valores dos dashboards serão recalculados.")) {
       try {
-        await axios.delete(`http://localhost:5000/api/hunts/${id}`);
+        // Usando URL relativa para funcionar na Vercel
+        await axios.delete(`/api/hunts/${id}`);
         fetchHunts();
       } catch (error) {
         console.error("Erro ao excluir hunt:", error);
@@ -43,7 +46,6 @@ function App() {
     }
   };
 
-  // Agrupa dados por Dia
   const huntsByDay = hunts.reduce((acc, hunt) => {
     const date = hunt.session_date;
     if (!acc[date]) acc[date] = { balance: 0, tc: 0, brl: 0, count: 0 };
@@ -54,9 +56,8 @@ function App() {
     return acc;
   }, {});
 
-  // Agrupa dados por Mês
   const huntsByMonth = hunts.reduce((acc, hunt) => {
-    const month = hunt.session_date.substring(0, 7); // "2026-07"
+    const month = hunt.session_date.substring(0, 7);
     if (!acc[month]) acc[month] = { balance: 0, tc: 0, brl: 0, count: 0 };
     acc[month].balance += hunt.balance;
     acc[month].tc += hunt.tc_farmed;
@@ -91,10 +92,7 @@ function App() {
         </form>
       </div>
 
-      {/* DASHBOARDS AGRUPADOS */}
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '30px' }}>
-        
-        {/* Tabela de Resumo Mensal */}
         <div style={{ flex: '1', minWidth: '300px' }}>
           <h2 style={{ color: '#2c3e50', fontSize: '1.2rem' }}>💰 Resumo Mensal</h2>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -121,7 +119,6 @@ function App() {
           </table>
         </div>
 
-        {/* Tabela de Resumo Diário */}
         <div style={{ flex: '1', minWidth: '300px' }}>
           <h2 style={{ color: '#2c3e50', fontSize: '1.2rem' }}>📅 Resumo Diário</h2>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -149,7 +146,6 @@ function App() {
         </div>
       </div>
 
-      {/* HISTÓRICO COMPLETO */}
       <h2 style={{ color: '#2c3e50' }}>Últimas Hunts Registradas</h2>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
