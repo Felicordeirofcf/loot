@@ -8,7 +8,6 @@ function App() {
 
   const fetchHunts = async () => {
     try {
-      // Usando URL relativa para funcionar na Vercel
       const res = await axios.get('/api/hunts');
       setHunts(res.data);
     } catch (error) {
@@ -23,7 +22,6 @@ function App() {
     if (!rawLog.trim()) return;
 
     try {
-      // Usando URL relativa para funcionar na Vercel
       await axios.post('/api/hunts', {
         log: rawLog, tc_price: tcPrice
       });
@@ -31,46 +29,45 @@ function App() {
       fetchHunts();
     } catch (error) {
       console.error("Erro ao registrar hunt:", error);
+      alert("Erro ao registrar! Verifique o log.");
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Tem certeza que deseja excluir esta hunt? Os valores dos dashboards serão recalculados.")) {
+    if (window.confirm("Excluir esta hunt?")) {
       try {
-        // Usando URL relativa para funcionar na Vercel
         await axios.delete(`/api/hunts/${id}`);
         fetchHunts();
       } catch (error) {
-        console.error("Erro ao excluir hunt:", error);
+        console.error("Erro ao excluir:", error);
       }
     }
   };
 
-  const huntsByDay = hunts.reduce((acc, hunt) => {
-    const date = hunt.session_date;
-    if (!acc[date]) acc[date] = { balance: 0, tc: 0, brl: 0, count: 0 };
-    acc[date].balance += hunt.balance;
-    acc[date].tc += hunt.tc_farmed;
-    acc[date].brl += hunt.brl_value;
-    acc[date].count += 1;
-    return acc;
-  }, {});
-
-  const huntsByMonth = hunts.reduce((acc, hunt) => {
-    const month = hunt.session_date.substring(0, 7);
-    if (!acc[month]) acc[month] = { balance: 0, tc: 0, brl: 0, count: 0 };
-    acc[month].balance += hunt.balance;
-    acc[month].tc += hunt.tc_farmed;
-    acc[month].brl += hunt.brl_value;
-    acc[month].count += 1;
-    return acc;
-  }, {});
+  // Cálculos Totais
+  const lucroTotal = hunts.reduce((acc, hunt) => acc + hunt.balance, 0);
+  const valorTotalBrl = hunts.reduce((acc, hunt) => acc + hunt.brl_value, 0);
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
       <h1 style={{ color: '#2c3e50', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>
         Tibia Solo Tracker
       </h1>
+
+      {/* Card de Lucro Acumulado */}
+      <div style={{ 
+        display: 'flex', gap: '40px', marginBottom: '30px', 
+        backgroundColor: '#2c3e50', padding: '20px', borderRadius: '8px', color: 'white' 
+      }}>
+        <div>
+          <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.8 }}>Lucro Acumulado</p>
+          <h2 style={{ margin: '5px 0 0 0', color: '#27ae60' }}>{(lucroTotal / 1000000).toFixed(2)} kk</h2>
+        </div>
+        <div>
+          <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.8 }}>Total em Reais (estimado)</p>
+          <h2 style={{ margin: '5px 0 0 0', color: '#f1c40f' }}>R$ {valorTotalBrl.toFixed(2)}</h2>
+        </div>
+      </div>
       
       <div style={{ backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '30px' }}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -82,97 +79,37 @@ function App() {
             />
           </div>
           <textarea 
-            rows="6" placeholder="Cole o 'Session data' do Tibia aqui..." 
+            rows="4" placeholder="Cole o 'Session data' do Tibia aqui..." 
             value={rawLog} onChange={(e) => setRawLog(e.target.value)}
-            style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc', resize: 'vertical' }}
+            style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
           />
-          <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#3498db', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', width: 'fit-content' }}>
+          <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#3498db', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
             Registrar Sessão
           </button>
         </form>
       </div>
 
-      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '30px' }}>
-        <div style={{ flex: '1', minWidth: '300px' }}>
-          <h2 style={{ color: '#2c3e50', fontSize: '1.2rem' }}>💰 Resumo Mensal</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#34495e', color: 'white' }}>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Mês</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Hunts</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Lucro</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Reais</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(huntsByMonth).map(([month, data]) => (
-                <tr key={month}>
-                  <td style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{month}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{data.count}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd', color: data.balance >= 0 ? '#27ae60' : '#c0392b', fontWeight: 'bold' }}>
-                    {(data.balance / 1000000).toFixed(2)}kk
-                  </td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>R$ {data.brl.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div style={{ flex: '1', minWidth: '300px' }}>
-          <h2 style={{ color: '#2c3e50', fontSize: '1.2rem' }}>📅 Resumo Diário</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#2980b9', color: 'white' }}>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Dia</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Hunts</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Lucro</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Reais</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(huntsByDay).map(([day, data]) => (
-                <tr key={day}>
-                  <td style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>{day}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{data.count}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd', color: data.balance >= 0 ? '#27ae60' : '#c0392b', fontWeight: 'bold' }}>
-                    {(data.balance / 1000000).toFixed(2)}kk
-                  </td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>R$ {data.brl.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <h2 style={{ color: '#2c3e50' }}>Últimas Hunts Registradas</h2>
+      <h2>Histórico de Hunts</h2>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ backgroundColor: '#2c3e50', color: 'white' }}>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Data</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Tempo</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Lucro (gp)</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>TCs</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Reais (R$)</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>Ação</th>
+            <tr style={{ backgroundColor: '#34495e', color: 'white' }}>
+              <th style={{ padding: '12px' }}>Data</th>
+              <th style={{ padding: '12px' }}>Lucro</th>
+              <th style={{ padding: '12px' }}>R$</th>
+              <th style={{ padding: '12px', textAlign: 'center' }}>Ação</th>
             </tr>
           </thead>
           <tbody>
             {hunts.map(hunt => (
-              <tr key={hunt.id} style={{ borderBottom: '1px solid #ddd', backgroundColor: '#fff' }}>
-                <td style={{ padding: '12px', border: '1px solid #ddd' }}>{hunt.session_date}</td>
-                <td style={{ padding: '12px', border: '1px solid #ddd' }}>{hunt.session_time}h</td>
-                <td style={{ padding: '12px', border: '1px solid #ddd', color: hunt.balance >= 0 ? '#27ae60' : '#c0392b', fontWeight: 'bold' }}>
-                  {hunt.balance.toLocaleString('pt-BR')} gp
+              <tr key={hunt.id} style={{ borderBottom: '1px solid #ddd' }}>
+                <td style={{ padding: '12px' }}>{hunt.session_date}</td>
+                <td style={{ padding: '12px', fontWeight: 'bold', color: hunt.balance >= 0 ? '#27ae60' : '#c0392b' }}>
+                  {(hunt.balance / 1000).toLocaleString()}k
                 </td>
-                <td style={{ padding: '12px', border: '1px solid #ddd' }}>{hunt.tc_farmed.toFixed(2)}</td>
-                <td style={{ padding: '12px', border: '1px solid #ddd' }}>R$ {hunt.brl_value.toFixed(2)}</td>
-                <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  <button 
-                    onClick={() => handleDelete(hunt.id)}
-                    style={{ backgroundColor: '#e74c3c', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                <td style={{ padding: '12px' }}>R$ {hunt.brl_value.toFixed(2)}</td>
+                <td style={{ padding: '12px', textAlign: 'center' }}>
+                  <button onClick={() => handleDelete(hunt.id)} style={{ backgroundColor: '#e74c3c', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>
                     Excluir
                   </button>
                 </td>
